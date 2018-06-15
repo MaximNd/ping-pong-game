@@ -3,8 +3,13 @@ const Rect = require('./Rect');
 const Vec = require('./Vec');
 
 class Racket extends Rect {
-    constructor() {
+    /**
+     * 
+     * @param {String} userID 
+     */
+    constructor(userID) {
         super(20, 100);
+        this.userID = userID;
         this.vel = new Vec();
         this.score = 0;
 

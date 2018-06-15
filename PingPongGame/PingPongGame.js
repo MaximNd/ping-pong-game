@@ -24,25 +24,18 @@ class PingPongGame {
         this.dt = 0.01663399999999092;
         this.isGameFinished = false;
         this.ball = new Ball();
-
-        this.rackets = [
-            new Racket(),
-            new Racket(),
-        ];
-
-        this.rackets[0].pos.x = 40;
-        this.rackets[1].pos.x = this._canvas.width - 40;
-        this.rackets.forEach(r => r.pos.y = this._canvas.height / 2);
+        this.rackets = [];
         // TODO remove i var
         let i = 0;
         this.callback = (dt) => {
-            if(i === 200) this.isGameFinished = true;
+            if(i === 10000) this.isGameFinished = true;
             if (!this.isGameFinished) {
                 this.update(dt);
                 ++i;
-                process.nextTick(() => {
+                io.sockets.to(roomID).emit('message', this.ball);
+                setTimeout(() => {
                     this.callback(this.dt);
-                });
+                }, 1);
             }
         };
         
@@ -55,7 +48,7 @@ class PingPongGame {
         //     requestAnimationFrame(this._frameCallback);
         // };
 
-        this.reset();
+        // this.reset();
     }
 
     get canvas() {
@@ -76,25 +69,51 @@ class PingPongGame {
 
     /**
      * 
+     * @param {String} userID 
+     */
+    addRacket(userID) {
+        this.rackets.push(new Racket(userID));
+        return this;
+    }
+
+    initRackets() {
+        this.rackets[0].pos.x = 40;
+        this.rackets[1].pos.x = this._canvas.width - 40;
+        this.rackets.forEach(r => r.pos.y = this._canvas.height / 2);
+        return this;
+    }
+
+    /**
+     * 
+     * @param {Number} y_coordinate 
+     * @param {String} userID 
+     */
+    moveRacket(y_coordinate, userID) {
+        this.rackets.find(r => r.userID === userID).pos.y = y_coordinate;
+        return this;
+    }
+
+
+    /**
+     * 
      * @param {Racket} racket 
      * @param {Ball} ball 
      */
     collide(racket, ball) {
         if (racket.left < ball.right && racket.right > ball.left &&
             racket.top < ball.bottom && racket.bottom > ball.top) {
-            ball.vel.x = -ball.vel.x * 1.05;
+            ball.vel.x = -ball.vel.x * this.increaseSpeedPerCollide;
             const len = ball.vel.len;
-            ball.vel.y += racket.vel.y * .2;
+            ball.vel.y += racket.vel.y * this.increaseSpeedPerCollide / 2;
             ball.vel.len = len;
         }
     }
     
     play() {
-        const b = this.ball;
-        if (b.vel.x === 0 && b.vel.y === 0) {
-            b.vel.x = 200 * (Math.random() > .5 ? 1 : -1);
-            b.vel.y = 200 * (Math.random() * 2 - 1);
-            b.vel.len = this.initialSpeed;
+        if (this.ball.vel.x === 0 && this.ball.vel.y === 0) {
+            this.ball.vel.x = 200 * (this.innings ? 1 : -1);
+            this.ball.vel.y = 200 * (Math.random() * 2 - 1);
+            this.ball.vel.len = this.initialSpeed + this.initialSpeed * this.increaseSpeedPerRound;
         }
     }
 
@@ -125,6 +144,7 @@ class PingPongGame {
         const offset = this.innings ? this.rackets[indexOfRacket].size.x / 2 : -this.rackets[indexOfRacket].size.x / 2;
         b.pos.x = this.rackets[indexOfRacket].pos.x + offset;
         b.pos.y = this.rackets[indexOfRacket].pos.y;
+        return this;
     }
 
     start() {

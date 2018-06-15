@@ -12,15 +12,22 @@ const games = {};
 
 io.on('connection', socket => {
     // console.log('UserConnected: ', socket);
-    socket.on('joinRoom', roomID => {
+    socket.on('joinRoom', ({ roomID, userID }) => {
         socket.join(roomID, () => {
             io.sockets.clients((err) => {
                 if (err) return;
                 else if (games[roomID]) {
                     // TODO - Call start and play on games[roomID] obj
+                    // games[roomID].addRacket(userID).initRackets().reset().start().play();
                 } else {
                     games[roomID] = new PingPongGame(new Canvas(1000, 480), 'classic', roomID, io);
+                    // games[roomID].addRacket(userID);
                 }
+            });
+
+            socket.on('rackedMooved', ({ y_coordinate, userID }) => {
+                // games[roomID].moveRacket(y_coordinate, userID);
+                socket.broadcast.to(roomID).emit('enemyMovedRacket', y_coordinate);
             });
         });
     });
