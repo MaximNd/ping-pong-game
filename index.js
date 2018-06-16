@@ -33,6 +33,7 @@ io.on('connection', socket => {
             });
 
             socket.on('rackedMooved', ({ y_coordinate, userID }) => {
+                console.log(`USER ${userID} MOVED RACKET TO Y:${y_coordinate}`);
                 games[roomID].moveRacket(y_coordinate, userID);
                 socket.broadcast.to(roomID).emit('enemyMovedRacket', y_coordinate);
             });
