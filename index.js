@@ -18,15 +18,19 @@ io.on('connection', socket => {
                 if (err) return;
                 else if (games[roomID]) {
                     // TODO - Call start and play on games[roomID] obj
-                    // games[roomID].addRacket(userID).initRackets().reset().start().play();
+                    games[roomID].addRacket(userID).initRackets().reset().start();
                 } else {
                     games[roomID] = new PingPongGame(new Canvas(1000, 480), 'classic', roomID, io);
-                    // games[roomID].addRacket(userID);
+                    games[roomID].addRacket(userID);
                 }
             });
 
+            socket.on('play', () => {
+                games[roomID].play();
+            });
+
             socket.on('rackedMooved', ({ y_coordinate, userID }) => {
-                // games[roomID].moveRacket(y_coordinate, userID);
+                games[roomID].moveRacket(y_coordinate, userID);
                 socket.broadcast.to(roomID).emit('enemyMovedRacket', y_coordinate);
             });
         });

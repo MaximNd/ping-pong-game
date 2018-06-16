@@ -19,23 +19,27 @@ class PingPongGame {
         this._io = io;
         this.innings = Math.random() >= 0.5;
         this.initialSpeed = this.gameType === 'classic' ? 250 : 350;
-        this.increaseSpeedPerCollide = this.gameType === 'classic' ? 1.01 : 1.05;
-        this.increaseSpeedPerRound = this.gameType === 'classic' ? 1.02 : 1.05;
+        this.increaseSpeedPerCollide = this.gameType === 'classic' ? 0.01 : 0.05;
+        this.increaseSpeedPerRound = this.gameType === 'classic' ? 0.02 : 0.05;
         this.dt = 0.01663399999999092;
+        // this.dt = 0.001;
+        console.log(this.dt);
         this.isGameFinished = false;
+        this.isInning = true;
         this.ball = new Ball();
         this.rackets = [];
         // TODO remove i var
         let i = 0;
         this.callback = (dt) => {
-            if(i === 10000) this.isGameFinished = true;
+            // if(i === 10000) this.isGameFinished = true;
             if (!this.isGameFinished) {
                 this.update(dt);
-                ++i;
-                io.sockets.to(roomID).emit('message', this.ball);
+                // ++i;
+                // console.log(this.ball.pos.x);
+                io.sockets.to(roomID).emit('message', { ball: this.ball, rackets: this.rackets });
                 setTimeout(() => {
                     this.callback(this.dt);
-                }, 1);
+                }, 15);
             }
         };
         
@@ -100,7 +104,7 @@ class PingPongGame {
      * @param {Ball} ball 
      */
     collide(racket, ball) {
-        if (racket.left < ball.right && racket.right > ball.left &&
+        if (racket.left < ball.right && racket.right >= ball.left &&
             racket.top < ball.bottom && racket.bottom > ball.top) {
             ball.vel.x = -ball.vel.x * this.increaseSpeedPerCollide;
             const len = ball.vel.len;
@@ -110,10 +114,12 @@ class PingPongGame {
     }
     
     play() {
+        this.isInning = false;
         if (this.ball.vel.x === 0 && this.ball.vel.y === 0) {
             this.ball.vel.x = 200 * (this.innings ? 1 : -1);
             this.ball.vel.y = 200 * (Math.random() * 2 - 1);
-            this.ball.vel.len = this.initialSpeed + this.initialSpeed * this.increaseSpeedPerRound;
+            this.initialSpeed += this.initialSpeed * this.increaseSpeedPerRound;
+            this.ball.vel.len = this.initialSpeed;
         }
     }
 
@@ -122,6 +128,7 @@ class PingPongGame {
     }
 
     reset() {
+        this.isInning = true;
         if (this.isEndGame()) {
             this.isGameFinished = true;
             return;
@@ -141,7 +148,7 @@ class PingPongGame {
         b.vel.x = 0;
         b.vel.y = 0;
         
-        const offset = this.innings ? this.rackets[indexOfRacket].size.x / 2 : -this.rackets[indexOfRacket].size.x / 2;
+        const offset = this.innings ? (this.rackets[indexOfRacket].size.x / 2)+5 : (-this.rackets[indexOfRacket].size.x / 2)-5;
         b.pos.x = this.rackets[indexOfRacket].pos.x + offset;
         b.pos.y = this.rackets[indexOfRacket].pos.y;
         return this;
@@ -153,25 +160,23 @@ class PingPongGame {
     }
 
     update(dt) {
-        const cvs = this._canvas;
-        const ball = this.ball;
-        ball.pos.x += ball.vel.x * dt;
-        ball.pos.y += ball.vel.y * dt;
+        this.ball.pos.x += this.ball.vel.x * dt;
+        this.ball.pos.y += this.ball.vel.y * dt;
 
-        if (ball.left < 0 || ball.right > cvs.width) {
-            ++this.rackets[ball.vel.x < 0 ? 1 : 0].score;
+        if (this.ball.left < 0 || this.ball.right > this._canvas.width) {
+            ++this.rackets[this.ball.vel.x < 0 ? 1 : 0].score;
             this.reset();
         }
 
-        if (ball.vel.y < 0 && ball.top < 0 ||
-            ball.vel.y > 0 && ball.bottom > cvs.height) {
-            ball.vel.y = -ball.vel.y;
+        if (this.ball.vel.y < 0 && this.ball.top < 0 ||
+            this.ball.vel.y > 0 && this.ball.bottom > this._canvas.height) {
+            this.ball.vel.y = -this.ball.vel.y;
         }
 
-        this.rackets.forEach(r => {
-            r.update(dt);
-            this.collide(r, ball);
-        });
+        this.rackets[0].update(dt);
+        this.collide(this.rackets[0], this.ball);
+        this.rackets[1].update(dt);
+        this.collide(this.rackets[1], this.ball);
     }
 };
 

@@ -30,9 +30,14 @@ class Vec {
     }
 
     set len(val) {
-        const f = val / this.len;
-        this.x *= f;
-        this.y *= f;
+        if (this.len === 0) {
+            this.x = 0;
+            this.y = 0;
+        } else {
+            const f = val / this.len;
+            this.x *= f;
+            this.y *= f;
+        }
     }
 };
 
