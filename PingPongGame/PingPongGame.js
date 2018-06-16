@@ -36,10 +36,13 @@ class PingPongGame {
                 this.update(dt);
                 // ++i;
                 // console.log(this.ball.pos.x);
-                io.sockets.to(roomID).emit('message', { ball: this.ball, rackets: this.rackets });
+                io.sockets.to(roomID).emit('state', {
+                    ball: this.ball,
+                    rackets: this.rackets
+                });
                 setTimeout(() => {
                     this.callback(this.dt);
-                }, 15);
+                }, 1000);
             }
         };
         
