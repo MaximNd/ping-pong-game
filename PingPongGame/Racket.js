@@ -8,7 +8,7 @@ class Racket extends Rect {
      * @param {String} userID 
      */
     constructor(userID) {
-        super(20, 100);
+        super(10, 100);
         this.userID = userID;
         this.vel = new Vec();
         this.score = 0;

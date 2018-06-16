@@ -29,11 +29,18 @@ class PingPongGame {
         this.ball = new Ball();
         this.rackets = [];
         // TODO remove i var
-        let i = 0;
-        this.callback = (dt) => {
-            // if(i === 10000) this.isGameFinished = true;
+        // let i = 0;
+        this.updateState = (dt) => {
             if (!this.isGameFinished) {
                 this.update(dt);
+                setTimeout(() => {
+                    this.updateState(dt);
+                }, 15);
+            }
+        }
+        this.callback = () => {
+            // if(i === 10000) this.isGameFinished = true;
+            if (!this.isGameFinished) {
                 // ++i;
                 // console.log(this.ball.pos.x);
                 io.sockets.to(roomID).emit('state', {
@@ -41,7 +48,7 @@ class PingPongGame {
                     rackets: this.rackets
                 });
                 setTimeout(() => {
-                    this.callback(this.dt);
+                    this.callback();
                 }, 1000);
             }
         };
@@ -158,7 +165,8 @@ class PingPongGame {
     }
 
     start() {
-        this.callback(this.dt);
+        this.updateState(this.dt);
+        this.callback();
         return this;
     }
 
