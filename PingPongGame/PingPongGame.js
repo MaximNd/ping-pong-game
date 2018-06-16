@@ -104,6 +104,9 @@ class PingPongGame {
      */
     moveRacket(y_coordinate, userID) {
         this.rackets.find(r => r.userID === userID).pos.y = y_coordinate;
+        if (this.isInning) {
+            this.ball.pos.y = y_coordinate;
+        }
         return this;
     }
 
