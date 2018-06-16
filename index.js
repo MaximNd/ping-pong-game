@@ -15,14 +15,17 @@ io.on('connection', socket => {
     socket.on('joinRoom', ({ roomID, userID }) => {
         socket.join(roomID, () => {
             io.sockets.clients((err) => {
-                if (err) return;
-                else if (games[roomID]) {
+                if (err) {
+                    console.log(`JOIN ROOM ID(${roomID}), ERROR:`, err);
+                    return;
+                } else if (games[roomID]) {
                     // TODO - Call start and play on games[roomID] obj
                     games[roomID].addRacket(userID).initRackets().reset().start();
                 } else {
                     games[roomID] = new PingPongGame(new Canvas(1000, 480), 'classic', roomID, io);
                     games[roomID].addRacket(userID);
                 }
+                console.log(`USER ${userID} JOINED TO THE ROOM WITH ID ${roomID}`);
             });
 
             socket.on('play', () => {
