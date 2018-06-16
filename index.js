@@ -20,7 +20,7 @@ io.on('connection', socket => {
                     return;
                 } else if (games[roomID]) {
                     // TODO - Call start and play on games[roomID] obj
-                    // games[roomID].addRacket(userID).initRackets().reset().start();
+                    games[roomID].addRacket(userID).initRackets().reset().start();
                 } else {
                     games[roomID] = new PingPongGame(new Canvas(1000, 480), 'classic', roomID, io);
                     games[roomID].addRacket(userID);
