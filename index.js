@@ -19,7 +19,7 @@ io.on('connection', socket => {
                 } else if (games[roomID]) {
                     games[roomID].addRacket(userID).initRackets().reset().start();
                 } else {
-                    games[roomID] = new PingPongGame(new Canvas(1450, 700), battleTypeData.name, roomID, io, battleTypeData.walls);
+                    games[roomID] = new PingPongGame(new Canvas(1440, 720), battleTypeData.name, roomID, io, battleTypeData.walls);
                     games[roomID].addRacket(userID);
                 }
                 console.log(`USER ${userID} JOINED TO THE ROOM WITH ID ${roomID}`);
