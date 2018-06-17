@@ -10,7 +10,7 @@ const PingPongGame = require('./PingPongGame/PingPongGame');
 const games = {};
 
 io.on('connection', socket => {
-    socket.on('joinRoom', ({ roomID, userID }) => {
+    socket.on('joinRoom', ({ roomID, userID, battleTypeData }) => {
         socket.join(roomID, () => {
             io.sockets.clients((err) => {
                 if (err) {
@@ -19,10 +19,11 @@ io.on('connection', socket => {
                 } else if (games[roomID]) {
                     games[roomID].addRacket(userID).initRackets().reset().start();
                 } else {
-                    games[roomID] = new PingPongGame(new Canvas(1000, 480), 'classic', roomID, io);
+                    games[roomID] = new PingPongGame(new Canvas(1000, 480), battleTypeData.name, roomID, io, battleTypeData.walls);
                     games[roomID].addRacket(userID);
                 }
                 console.log(`USER ${userID} JOINED TO THE ROOM WITH ID ${roomID}`);
+                socket.emit('joined', games[roomID].rackets.length === 1 ? 0 : 1);
             });
 
             socket.on('play', userID => {
