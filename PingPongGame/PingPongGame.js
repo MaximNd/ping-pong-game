@@ -11,12 +11,14 @@ class PingPongGame {
      * @param {String} gameType classic or advanced
      * @param {String} roomID
      * @param {SocketIO.Server} io 
+     * @param {Number} walls
      */
-    constructor(canvas, gameType, roomID, io) {
+    constructor(canvas, gameType, roomID, io, walls) {
         this._canvas = canvas;
         this._gameType = gameType;
         this._roomID = roomID;
         this._io = io;
+        this.walls = walls || 0;
         this.innings = Math.random() >= 0.5;
         this.initialSpeed = this.gameType === 'classic' ? 250 : 350;
         this.increaseSpeedPerCollide = this.gameType === 'classic' ? 0.01 : 0.05;
@@ -91,8 +93,8 @@ class PingPongGame {
     }
 
     initRackets() {
-        this.rackets[0].pos.x = 40;
-        this.rackets[1].pos.x = this._canvas.width - 40;
+        this.rackets[0].pos.x = 10;
+        this.rackets[1].pos.x = this._canvas.width - 10;
         this.rackets.forEach(r => r.pos.y = this._canvas.height / 2);
         return this;
     }
