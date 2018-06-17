@@ -149,12 +149,12 @@ class PingPongGame {
         this.isInning = true;
         if (this.isEndGame()) {
             this.isGameFinished = true;
-            return;
+            return this;
         }
         
         let indexOfRacket = this.innings ? 0 : 1;
         if (this.rackets[indexOfRacket].countInnings === 2 
-            || (this.rackets[0].countInnings >= 11 && this.rackets[1].countInnings >= 11 && this.rackets[indexOfRacket].countInnings === 1)) {
+            || (this.rackets[0].countInnings >= 10 && this.rackets[1].countInnings >= 10 && this.rackets[indexOfRacket].countInnings === 1)) {
             this.rackets[indexOfRacket].countInnings = 0;
             this.innings = !this.innings;
             indexOfRacket = this.innings ? 0 : 1;
