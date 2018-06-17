@@ -93,8 +93,8 @@ class PingPongGame {
     }
 
     initRackets() {
-        this.rackets[0].pos.x = 10;
-        this.rackets[1].pos.x = this._canvas.width - 10;
+        this.rackets[0].pos.x = 10 + (this.rackets[0].size.x / 2);
+        this.rackets[1].pos.x = this._canvas.width - 10 - (this.rackets[0].size.x / 2);
         this.rackets.forEach(r => r.pos.y = this._canvas.height / 2);
         return this;
     }
