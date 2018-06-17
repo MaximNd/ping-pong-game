@@ -49,7 +49,7 @@ class PingPongGame {
                 });
                 setTimeout(() => {
                     this.callback();
-                }, 1000);
+                }, 100);
             }
         };
         
@@ -119,14 +119,19 @@ class PingPongGame {
     collide(racket, ball) {
         if (racket.left < ball.right && racket.right >= ball.left &&
             racket.top < ball.bottom && racket.bottom > ball.top) {
-            ball.vel.x = -ball.vel.x * this.increaseSpeedPerCollide;
+            ball.vel.x = -(ball.vel.x + ball.vel.x * this.increaseSpeedPerCollide);
             const len = ball.vel.len;
             ball.vel.y += racket.vel.y * this.increaseSpeedPerCollide / 2;
             ball.vel.len = len;
         }
     }
     
-    play() {
+    /**
+     * 
+     * @param {String} userID 
+     */
+    play(userID) {
+        if (this.rackets[this.innings ? 0 : 1].userID !== userID) return;
         this.isInning = false;
         if (this.ball.vel.x === 0 && this.ball.vel.y === 0) {
             this.ball.vel.x = 200 * (this.innings ? 1 : -1);
@@ -137,7 +142,7 @@ class PingPongGame {
     }
 
     isEndGame() {
-        return (this.rackets[0].score >= 12 || this.rackets[1].score >= 12) && Math.abs(this.rackets[0].score - this.rackets[1].score) >= 2;
+        return (this.rackets[0].score >= 11 || this.rackets[1].score >= 11) && Math.abs(this.rackets[0].score - this.rackets[1].score) >= 2;
     }
 
     reset() {
@@ -149,13 +154,12 @@ class PingPongGame {
         
         let indexOfRacket = this.innings ? 0 : 1;
         if (this.rackets[indexOfRacket].countInnings === 2 
-            || (this.rackets[0].countInnings >= 11 && this.rackets[1].countInnings >= 11) && this.rackets[indexOfRacket].countInnings === 1) {
+            || (this.rackets[0].countInnings >= 11 && this.rackets[1].countInnings >= 11 && this.rackets[indexOfRacket].countInnings === 1)) {
             this.rackets[indexOfRacket].countInnings = 0;
             this.innings = !this.innings;
             indexOfRacket = this.innings ? 0 : 1;
-        } else {
-            ++this.rackets[indexOfRacket].countInnings;
-        }
+        } 
+        ++this.rackets[indexOfRacket].countInnings;
 
         const b = this.ball;
         b.vel.x = 0;
