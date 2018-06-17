@@ -167,7 +167,7 @@ class PingPongGame {
         b.vel.x = 0;
         b.vel.y = 0;
         
-        const offset = this.innings ? (this.rackets[indexOfRacket].size.x / 2)+15 : (-this.rackets[indexOfRacket].size.x / 2)-15;
+        const offset = this.innings ? (this.rackets[indexOfRacket].size.x / 2)+31 : (-this.rackets[indexOfRacket].size.x / 2)-31;
         b.pos.x = this.rackets[indexOfRacket].pos.x + offset;
         b.pos.y = this.rackets[indexOfRacket].pos.y;
         return this;
