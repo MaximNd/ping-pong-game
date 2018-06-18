@@ -12,62 +12,49 @@ const games = {};
 io.on('connection', socket => {
     socket.on('joinRoom', ({ roomID, userID, battleTypeData }) => {
         socket.join(roomID, () => {
-            io.sockets.clients((err) => {
-                if (err) {
-                    console.log(`JOIN ROOM ID(${roomID}), ERROR:`, err);
-                    return;
-                } else if (games[roomID]) {
-                    games[roomID].addRacket(userID).initRackets().reset().start();
-                } else {
-                    games[roomID] = new PingPongGame(new Canvas(1440, 720), battleTypeData.name, roomID, io, battleTypeData.walls);
-                    games[roomID].addRacket(userID);
-                }
+            if (games[roomID] && games[roomID].coconnectedPlayers.length === 2) {
+                const index = games[roomID].coconnectedPlayers.findIndex(userID => userID === socket.userID);
+                socket.emit('joined', index);
+                console.log(`USER ${userID} REJOINED TO THE ROOM WITH ID ${roomID}`);
+            } else if (games[roomID] && games[roomID].coconnectedPlayers.length === 1) {
+                games[roomID].coconnectedPlayers.push(userID);
+                games[roomID].game.addRacket(userID).initRackets().reset().start();
+                socket.emit('joined', 1);
                 console.log(`USER ${userID} JOINED TO THE ROOM WITH ID ${roomID}`);
-                socket.emit('joined', games[roomID].rackets.length === 1 ? 0 : 1);
-            });
+            } else if (!games[roomID]) {
+                games[roomID] = {
+                    game: new PingPongGame(new Canvas(1440, 720), battleTypeData.name, roomID, io, battleTypeData.walls),
+                    coconnectedPlayers: [userID]
+                };
+                games[roomID].game.addRacket(userID);
+                socket.emit('joined', 0);
+                console.log(`USER ${userID} CREATED AND JOINED TO THE ROOM WITH ID ${roomID}`);
+            }
 
             socket.on('play', userID => {
-                games[roomID].play(userID);
+                games[roomID].game.play(userID);
             });
 
             socket.on('rackedMooved', ({ y_coordinate, userID }) => {
                 console.log(`USER ${userID} MOVED RACKET TO Y:${y_coordinate}`);
-                games[roomID].moveRacket(y_coordinate, userID);
+                games[roomID].game.moveRacket(y_coordinate, userID);
                 socket.broadcast.to(roomID).emit('enemyMovedRacket', y_coordinate);
             });
         });
+        socket.on('leaveRoom', roomID => {
+            if (games[roomID]) {
+                delete games[roomID];
+            }
+            socket.leave(roomID);
+        });
+        socket.on('disconnect', () => {
+            if (games[roomID] && games[roomID].game.isGameFinished) {
+                delete games[roomID];
+                socket.leave(roomID);
+            }
+        });
     });
-    
-
-    socket.on('leaveRoom', roomID => {
-        if (games[roomID]) {
-            delete games[roomID];
-        }
-        socket.leave(roomID);
-    });
-    
-    // socket.on('send message', function(data) {
-    //     console.log('sending room post', data.room);
-    //     socket.broadcast.to(data.room).emit('conversation private post', {
-    //         message: data.message
-    //     });
-    // });
 });
-
-// let i = 0;
-
-// function test() {
-//     if ( i < 100 ) {
-  
-//         ++i;
-//         console.log('TEST - i: ', i);
-//         process.nextTick(function() {
-//             console.log('(nextTick) TEST - i: ', i);
-//             test();
-//         });
-//     }
-// };
-// test();
 
 const PORT = process.env.PORT || 5000;
 

@@ -24,14 +24,12 @@ class PingPongGame {
         this.increaseSpeedPerCollide = this.gameType === 'classic' ? 0.01 : 0.05;
         this.increaseSpeedPerRound = this.gameType === 'classic' ? 0.02 : 0.05;
         this.dt = 0.01663399999999092;
-        // this.dt = 0.001;
         console.log(this.dt);
         this.isGameFinished = false;
         this.isInning = true;
         this.ball = new Ball();
         this.rackets = [];
-        // TODO remove i var
-        // let i = 0;
+
         this.updateState = (dt) => {
             if (!this.isGameFinished) {
                 this.update(dt);
@@ -41,10 +39,7 @@ class PingPongGame {
             }
         }
         this.callback = () => {
-            // if(i === 10000) this.isGameFinished = true;
             if (!this.isGameFinished) {
-                // ++i;
-                // console.log(this.ball.pos.x);
                 io.sockets.to(roomID).emit('state', {
                     ball: this.ball,
                     rackets: this.rackets
@@ -54,17 +49,6 @@ class PingPongGame {
                 }, 100);
             }
         };
-        
-        // this._frameCallback = (millis) => {
-        //     if (lastTime !== null) {
-        //         const diff = millis - lastTime;
-        //         this.update(diff / 1000);
-        //     }
-        //     lastTime = millis;
-        //     requestAnimationFrame(this._frameCallback);
-        // };
-
-        // this.reset();
     }
 
     get canvas() {
@@ -167,7 +151,7 @@ class PingPongGame {
         b.vel.x = 0;
         b.vel.y = 0;
         
-        const offset = this.innings ? (this.rackets[indexOfRacket].size.x / 2)+31 : (-this.rackets[indexOfRacket].size.x / 2)-31;
+        const offset = this.innings ? (this.rackets[indexOfRacket].size.x / 2)+20 : (-this.rackets[indexOfRacket].size.x / 2)-20;
         b.pos.x = this.rackets[indexOfRacket].pos.x + offset;
         b.pos.y = this.rackets[indexOfRacket].pos.y;
         return this;
