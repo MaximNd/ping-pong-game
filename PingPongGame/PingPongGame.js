@@ -2,7 +2,16 @@
 const Ball = require('./Ball');
 const Canvas = require('./Canvas');
 const Racket = require('./Racket');
-const Rect = require('./Rect');
+const Wall = require('./Wall');
+
+/**
+ * Return random value between min and max inclusive
+ * @param {Number} min 
+ * @param {Number} max 
+ */
+function rand(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) ) + min;
+}
 
 class PingPongGame {
     /**
@@ -18,13 +27,13 @@ class PingPongGame {
         this._gameType = gameType;
         this._roomID = roomID;
         this._io = io;
-        this.walls = walls || 0;
+        this.wallsCount = walls || 0;
+        this.walls = [];
         this.innings = Math.random() >= 0.5;
         this.initialSpeed = this.gameType === 'classic' ? 250 : 350;
         this.increaseSpeedPerCollide = this.gameType === 'classic' ? 0.01 : 0.05;
         this.increaseSpeedPerRound = this.gameType === 'classic' ? 0.02 : 0.05;
         this.dt = 0.01663399999999092;
-        console.log(this.dt);
         this.isGameFinished = false;
         this.isInning = true;
         this.ball = new Ball();
@@ -40,10 +49,14 @@ class PingPongGame {
         }
         this.callback = () => {
             if (!this.isGameFinished) {
-                io.sockets.to(roomID).emit('state', {
+                const state = {
                     ball: this.ball,
                     rackets: this.rackets
-                });
+                };
+                if (this.gameType === 'advanced') {
+                    state.walls = this.walls;
+                }
+                io.sockets.to(roomID).emit('state', state);
                 setTimeout(() => {
                     this.callback();
                 }, 100);
@@ -83,6 +96,17 @@ class PingPongGame {
         return this;
     }
 
+    setupWalls() {
+        this.walls.length = 0;
+        for (let i = 0; i < this.wallsCount; ++i) {
+            this.walls.push(new Wall(10, rand(40, 90)));
+            const oneThirdOfCanvas = this.canvas.width / 3;
+            const halfOfWall = Math.round(this.walls[i].size.y / 2);
+            this.walls[i].pos.x = rand(0, Math.round(oneThirdOfCanvas)) + oneThirdOfCanvas;
+            this.walls[i].pos.y = rand(halfOfWall, this.canvas.height - halfOfWall); 
+        }
+    }
+
     /**
      * 
      * @param {Number} y_coordinate 
@@ -102,7 +126,7 @@ class PingPongGame {
      * @param {Racket} racket 
      * @param {Ball} ball 
      */
-    collide(racket, ball) {
+    collideBall(racket, ball) {
         if (racket.left < ball.right && racket.right >= ball.left &&
             racket.top < ball.bottom && racket.bottom > ball.top) {
             ball.vel.x = -(ball.vel.x + ball.vel.x * this.increaseSpeedPerCollide);
@@ -110,6 +134,21 @@ class PingPongGame {
             ball.vel.y += racket.vel.y * this.increaseSpeedPerCollide / 2;
             ball.vel.len = len;
         }
+    }
+
+    /**
+     * 
+     * @param {Wall} wall 
+     * @param {Ball} ball 
+     */
+    collideWall(wall, ball) {
+        if (wall.top <= ball.bottom && wall.bottom >= ball.top &&
+            ball.pos.x >= wall.left && ball.pos.x <= wall.right) {
+            ball.vel.y = -ball.vel.y;
+        } else if (wall.left <= ball.right && wall.right >= ball.left &&
+                   ball.pos.y >= wall.top && ball.pos.y <= wall.bottom) {
+            ball.vel.x = -ball.vel.x;
+        } 
     }
     
     /**
@@ -121,7 +160,7 @@ class PingPongGame {
         this.isInning = false;
         if (this.ball.vel.x === 0 && this.ball.vel.y === 0) {
             this.ball.vel.x = 200 * (this.innings ? 1 : -1);
-            this.ball.vel.y = 200 * (Math.random() * 2 - 1);
+            this.ball.vel.y = Math.random() >= 0.5 ? rand(100, 300) : rand(-300, -100);
             this.initialSpeed += this.initialSpeed * this.increaseSpeedPerRound;
             this.ball.vel.len = this.initialSpeed;
         }
@@ -131,11 +170,20 @@ class PingPongGame {
         return (this.rackets[0].score >= 11 || this.rackets[1].score >= 11) && Math.abs(this.rackets[0].score - this.rackets[1].score) >= 2;
     }
 
+    /**
+     * Reset state of all objects every inning
+     */
     reset() {
         this.isInning = true;
+        // Check if this is the end
         if (this.isEndGame()) {
             this.isGameFinished = true;
             return this;
+        }
+
+        // Set up walls on battleground if this is advanced mode
+        if (this.gameType === 'advanced' && this.wallsCount != 0) {
+            this.setupWalls();
         }
         
         let indexOfRacket = this.innings ? 0 : 1;
@@ -178,9 +226,11 @@ class PingPongGame {
         }
 
         this.rackets[0].update(dt);
-        this.collide(this.rackets[0], this.ball);
+        this.collideBall(this.rackets[0], this.ball);
         this.rackets[1].update(dt);
-        this.collide(this.rackets[1], this.ball);
+        this.collideBall(this.rackets[1], this.ball);
+
+        this.walls.forEach(wall => this.collideWall(wall, this.ball));
     }
 };
 
