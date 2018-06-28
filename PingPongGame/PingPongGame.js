@@ -38,6 +38,7 @@ class PingPongGame {
         this.isInning = true;
         this.ball = new Ball();
         this.rackets = [];
+        this.skills = {};
 
         this.updateState = (dt) => {
             if (!this.isGameFinished) {
@@ -81,7 +82,19 @@ class PingPongGame {
     }
 
     /**
-     * 
+     * Adds active user skills
+     * @param {String} userID 
+     * @param {Array} skills 
+     */
+    addSkills(userID, skills) {
+        if (!this.skills[userID]) {
+            this.skills[userID] = skills;
+        }
+        return this;
+    }
+
+    /**
+     * Adds racket on canvas when user join the room
      * @param {String} userID 
      */
     addRacket(userID) {
@@ -89,6 +102,9 @@ class PingPongGame {
         return this;
     }
 
+    /**
+     * Initializes rackets position on canvas
+     */
     initRackets() {
         this.rackets[0].pos.x = 10 + (this.rackets[0].size.x / 2);
         this.rackets[1].pos.x = this._canvas.width - 10 - (this.rackets[0].size.x / 2);
@@ -96,6 +112,9 @@ class PingPongGame {
         return this;
     }
 
+    /**
+     * Adds walls on canvas
+     */
     setupWalls() {
         this.walls.length = 0;
         for (let i = 0; i < this.wallsCount; ++i) {
@@ -108,7 +127,7 @@ class PingPongGame {
     }
 
     /**
-     * 
+     * Moves the racket to the specified place along the ordinate axis
      * @param {Number} y_coordinate 
      * @param {String} userID 
      */
@@ -122,7 +141,8 @@ class PingPongGame {
 
 
     /**
-     * 
+     * Checks if the ball collided with the racket. 
+     * If yes, then it will change its direction and increase the speed depending on the type of game.
      * @param {Racket} racket 
      * @param {Ball} ball 
      */
@@ -137,7 +157,8 @@ class PingPongGame {
     }
 
     /**
-     * 
+     * Checks if the ball collided with the racket. 
+     * If yes, then it will change its direction.
      * @param {Wall} wall 
      * @param {Ball} ball 
      */
@@ -152,7 +173,8 @@ class PingPongGame {
     }
     
     /**
-     * 
+     * Initializes the initial speed and angle of movement the ball.
+     * The method is called at each inning.
      * @param {String} userID 
      */
     play(userID) {
@@ -166,8 +188,27 @@ class PingPongGame {
         }
     }
 
+    /**
+     * Executing action of the skill
+     * @param {String} userID 
+     * @param {String} skillButton 
+     */
+    execSkill(userID, skillButton) {
+        
+    }
+
+    /**
+     * Checks the end of the game.
+     */
     isEndGame() {
         return (this.rackets[0].score >= 11 || this.rackets[1].score >= 11) && Math.abs(this.rackets[0].score - this.rackets[1].score) >= 2;
+    }
+
+    /**
+     * Returns winner's ID
+     */
+    getWinner() {
+        return this.rackets[0].score > this.rackets[1].score ? this.rackets[0].userID : this.rackets[1].userID;
     }
 
     /**
@@ -178,6 +219,7 @@ class PingPongGame {
         // Check if this is the end
         if (this.isEndGame()) {
             this.isGameFinished = true;
+            this.io.sockets.to(this.roomID).emit('gameFinished', this.getWinner());
             return this;
         }
 
@@ -186,6 +228,7 @@ class PingPongGame {
             this.setupWalls();
         }
         
+        // Init rackets and calculate innings
         let indexOfRacket = this.innings ? 0 : 1;
         if (this.rackets[indexOfRacket].countInnings === 2 
             || (this.rackets[0].countInnings >= 10 && this.rackets[1].countInnings >= 10 && this.rackets[indexOfRacket].countInnings === 1)) {
@@ -195,22 +238,31 @@ class PingPongGame {
         } 
         ++this.rackets[indexOfRacket].countInnings;
 
+        // Reset ball velocity
         const b = this.ball;
         b.vel.x = 0;
         b.vel.y = 0;
-        
+
+        // Reset ball position
         const offset = this.innings ? (this.rackets[indexOfRacket].size.x / 2)+20 : (-this.rackets[indexOfRacket].size.x / 2)-20;
         b.pos.x = this.rackets[indexOfRacket].pos.x + offset;
         b.pos.y = this.rackets[indexOfRacket].pos.y;
         return this;
     }
 
+    /**
+     * Start the game
+     */
     start() {
         this.updateState(this.dt);
         this.callback();
         return this;
     }
 
+    /**
+     * Update state of the ball/
+     * @param {Number} dt 
+     */
     update(dt) {
         this.ball.pos.x += this.ball.vel.x * dt;
         this.ball.pos.y += this.ball.vel.y * dt;

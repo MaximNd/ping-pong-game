@@ -10,7 +10,7 @@ const PingPongGame = require('./PingPongGame/PingPongGame');
 const games = {};
 
 io.on('connection', socket => {
-    socket.on('joinRoom', ({ roomID, userID, battleTypeData }) => {
+    socket.on('joinRoom', ({ roomID, userID, skills, battleTypeData }) => {
         socket.join(roomID, () => {
             if (games[roomID] && games[roomID].coconnectedPlayers.length === 2) {
                 const index = games[roomID].coconnectedPlayers.findIndex(userID => userID === socket.userID);
@@ -18,7 +18,7 @@ io.on('connection', socket => {
                 console.log(`USER ${userID} REJOINED TO THE ROOM WITH ID ${roomID}`);
             } else if (games[roomID] && games[roomID].coconnectedPlayers.length === 1) {
                 games[roomID].coconnectedPlayers.push(userID);
-                games[roomID].game.addRacket(userID).initRackets().reset().start();
+                games[roomID].game.addRacket(userID).addSkills(userID, skills).initRackets().reset().start();
                 socket.emit('joined', 1);
                 console.log(`USER ${userID} JOINED TO THE ROOM WITH ID ${roomID}`);
             } else if (!games[roomID]) {
@@ -26,7 +26,7 @@ io.on('connection', socket => {
                     game: new PingPongGame(new Canvas(1440, 720), battleTypeData.name, roomID, io, battleTypeData.walls),
                     coconnectedPlayers: [userID]
                 };
-                games[roomID].game.addRacket(userID);
+                games[roomID].game.addRacket(userID).addSkills(userID, skills);
                 socket.emit('joined', 0);
                 console.log(`USER ${userID} CREATED AND JOINED TO THE ROOM WITH ID ${roomID}`);
             }
@@ -39,6 +39,11 @@ io.on('connection', socket => {
                 console.log(`USER ${userID} MOVED RACKET TO Y:${y_coordinate}`);
                 games[roomID].game.moveRacket(y_coordinate, userID);
                 socket.broadcast.to(roomID).emit('enemyMovedRacket', y_coordinate);
+            });
+
+            socket.on('skillUsed', ({ skillButton, userID }) => {
+                console.log(`USER_ID: ${userID}, SKILL_BUTTON: ${skillButton}`);
+                games[roomID].game.execSkill(userID, skillButton);
             });
         });
         socket.on('leaveRoom', roomID => {
